@@ -1,0 +1,24 @@
+reset
+brick x 10 y 10 z 1
+curve 1 2 3 4 5 6 7 8 interval 4
+curve 1 2 3 4 5 6 7 8 scheme equal
+curve 9 10 11 12 interval 1
+curve 9 10 11 12 scheme equal
+volume 1 scheme auto 
+volume 1 scheme auto 
+mesh volume 1
+create material 1
+modify material 1 name 'material_1'
+modify material 1 set property 'POISSON' value 0.3
+modify material 1 set property 'MODULUS' value 2.1e+11
+modify material 1 set property 'DENSITY' value 8000
+block 1 material 1 cs 1 element solid order 2
+create displacement  on curve 1 dof all fix 0 
+create displacement  on curve 5 6 7 8 dof 3 fix 0 
+create pressure  on surface 1  magnitude 1e+6
+set duplicate block elements off
+block 1 add volume 1
+block 1 material 1 cs 1 element solid order 2
+analysis type static elasticity dim3
+print matrix_txt on
+calculation start path 'C:\Temp\fidesys05.pvd'
