@@ -7,6 +7,8 @@
 #include "mkl.h"
 #include "mkl_cluster_sparse_solver.h"
 
+#include "matrixio.h"
+
 void MPI_test_invoke(int argc = 0, char* argv[] = nullptr)
 {
 	int rank, size, name_len;
