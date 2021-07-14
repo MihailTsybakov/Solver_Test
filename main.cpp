@@ -104,22 +104,22 @@ int main()
 	bool logs = true;
 	size_t matrix_size = 4;			 // NxN Matrix size = equations number
 
-	void* pt[64] = {0};				 // Dont modify after first cpardiso call
-	MKL_INT maxfct = 1;				 // Factorizations
-	MKL_INT mnum = 1;				 // Ignored
-	MKL_INT mtype = 11;				 // Real non-symmetric matrix
-	MKL_INT phase = 13;				 // Full solving process
-	MKL_INT  n = 4;				     /// Equations number ~!!
-	float* a;                        // A Matrix
-	MKL_INT* ia;					 // ia index array
-	MKL_INT* ja;					 // ja index array
+	void* pt[64] = {0};			 // Dont modify after first cpardiso call
+	MKL_INT maxfct = 1;			 // Factorizations
+	MKL_INT mnum = 1;			 // Ignored
+	MKL_INT mtype = 11;			 // Real non-symmetric matrix
+	MKL_INT phase = 13;			 // Full solving process
+	MKL_INT  n = 4;				 /// Equations number ~!!
+	float* a;                        	 // A Matrix
+	MKL_INT* ia;				 // ia index array
+	MKL_INT* ja;				 // ja index array
 	MKL_INT service_int;			 // Ignored?
 	MKL_INT nrhs = 1;		         // Number of right-hand sides
-	MKL_INT* iparm;					 // Solver parameters
-	MKL_INT msglvl = 1;				 // Report messages ON
-	float* b;						 // b vector
-	float* x;						 // x vector
-	MKL_INT error = 0;				 // Error Status
+	MKL_INT* iparm;				 // Solver parameters
+	MKL_INT msglvl = 1;			 // Report messages ON
+	float* b;				 // b vector
+	float* x;				 // x vector
+	MKL_INT error = 0;			 // Error Status
 
 	a = new float[5];  
 	b = new float[4]; 
