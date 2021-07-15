@@ -23,6 +23,7 @@ if(WIN32)
       "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/mkl/lib/intel64"
     )
     find_path(MKL_BINARYDIR
+      mkl_core.dll
       mkl_core.1.dll
       HINTS
       ${MKLROOT}/../redist/intel64/mkl
