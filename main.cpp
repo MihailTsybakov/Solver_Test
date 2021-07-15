@@ -88,7 +88,7 @@ void pack_params(int* solver_params, bool default_settings)
 	solver_params[21] = 0;   // Output value
 	solver_params[22] = 0;   // Output value
 	solver_params[26] = 1;   // Check inputted matrix correctness enabled
-	solver_params[27] = 1;   /// Single precision calculations ~!
+	solver_params[27] = 2;   /// Double precision calculations ~!
 	solver_params[29] = 0;   // Output value
 	solver_params[30] = 0;   /// Partial solve disabled ~!!
 	solver_params[34] = 1;   // C-Style indexing
@@ -97,14 +97,14 @@ void pack_params(int* solver_params, bool default_settings)
 	solver_params[39] = 0;   /// a-Matrix is provided from 0-hostprocess ~!!
 	solver_params[40] = -1;  // Not actual for current format settings
 	solver_params[41] = -1;  // Not actual for current format settings
-	solver_params[59] = 2;   /// Cluster sparse solver mode set to OOC MODE ~!!!
+	solver_params[59] = 1;   /// Cluster sparse solver mode set to OOC MODE ~!!!
 	solver_params[62] = 0;   // Output value
 }
 
 int main()
 {
 	bool logs = true;
-	size_t matrix_size = 4;			 // NxN Matrix size = equations number
+	size_t matrix_size = 4;		 // NxN Matrix size = equations number
 
 	void* pt[64] = {0};			 // Dont modify after first cpardiso call
 	MKL_INT maxfct = 1;			 // Factorizations
@@ -112,61 +112,76 @@ int main()
 	MKL_INT mtype = 11;			 // Real non-symmetric matrix
 	MKL_INT phase = 13;			 // Full solving process
 	MKL_INT  n = 4;				 /// Equations number ~!!
-	float* a;                        	 // A Matrix
+	double* a;                   // A Matrix
 	MKL_INT* ia;				 // ia index array
 	MKL_INT* ja;				 // ja index array
-	MKL_INT service_int;			 // Ignored?
-	MKL_INT nrhs = 1;		         // Number of right-hand sides
+	MKL_INT service_int;		 // Ignored?
+	MKL_INT nrhs = 1;	         // Number of right-hand sides
 	MKL_INT* iparm;				 // Solver parameters
 	MKL_INT msglvl = 1;			 // Report messages ON
-	float* b;				 // b vector
-	float* x;				 // x vector
+	double* b, *b_test;			 // b vector
+	double* x;					 // x vector
 	MKL_INT error = 0;			 // Error Status
 
-	a = new float[5];  
-	b = new float[4]; 
-	x = new float[4]; 
-	iparm = new MKL_INT[64]; 
-	ia = new MKL_INT[5]; 
-	ja = new MKL_INT[5]; 
+	iparm = new MKL_INT[64];
 
 	//    -======= Matrix Description ========-
 	/// =========================================
-	x[0] = 0; x[1] = 0; x[2] = 0; x[3] = 0; 
+	std::string source_path = "C:\\Users\\mihai\\Desktop\\progy\\C++\\MPI_Solvers\\Solver_F1\\repository\\Testing\\Examples\\fidesys_static_3d";
 
-	//			Some random matrix
-	a[0] = 1; a[1] = 5; a[2] = 7; a[3] = 6; a[4] = 9;
-	b[0] = 1; b[1] = 1; b[2] = 1; b[3] = 1;
-	ja[0] = 0; ja[1] = 2; ja[2] = 1; ja[3] = 1; ja[4] = 3;
-	ia[0] = 0; ia[1] = 1; ia[2] = 2; ia[3] = 3; ia[4] = 5;
+	std::ifstream B_vector;
+	std::ifstream X_vector;
+	std::ifstream A_matrix;
 
-	//       Sample matrix from intel example
+	B_vector.open(source_path + "\\B.vec", std::ios::in);
+	X_vector.open(source_path + "\\X.vec", std::ios::in);
+	A_matrix.open(source_path + "\\A.txt", std::ios::in);
+
+	if (!B_vector.is_open() || !X_vector.is_open() || !A_matrix.is_open())
+	{
+		std::cout << " <logs> Error: cannot open one or several files in " << source_path << std::endl;
+		return -1;
+	}
+
+	MKL_INT A_size, A_nonzero;
+
+	std::vector<double> A;
+	std::vector<double> B;
+	std::vector<double> X_true;
+	std::vector<MKL_INT> IA;
+	std::vector<MKL_INT> JA;
+
+	read_csr_matrix_file<double>(A_matrix, A_size, A_nonzero, IA, JA, A);
+
+	MKL_INT B_size, X_size;
+	B_vector >> B_size;
+	X_vector >> X_size;
 	
-	//MKL_INT n = 5;
-	//MKL_INT* ia = new MKL_INT[6];
-	//ia[0] = 0; ia[1] = 3; ia[2] = 5; ia[3] = 8; ia[4] = 11; ia[5] = 13;
-	//b[0] = 1; b[1] = 1; b[2] = 1; b[3] = 1; b[4] = 1;
+	read_vector<double>(B_vector, B_size, B);
+	read_vector<double>(X_vector, X_size, X_true);
 
-	////MKL_INT* ja = new MKL_INT[13];
-	//ja[0] = 0; ja[1] = 1; ja[2] = 3;
-	//ja[3] = 0; ja[4] = 1;
-	//ja[5] = 1; ja[6] = 2; ja[7] = 3;
-	//ja[8] = 0; ja[9] = 2; ja[10] = 3;
-	//ja[11] = 1; ja[12] = 4;
+	B_vector.close();
+	X_vector.close();
+	A_matrix.close();
+	
+	a = new double[A_nonzero];
+	b = new double[B_size];
+	b_test = new double[B_size];
+	x = new double[X_size];
+	ia = new MKL_INT[IA.size()];
+	ja = new MKL_INT[JA.size()];
 
-	////double* a = new double[13];
-	//a[0] = 1; a[1] = -1; a[2] = -3;
-	//a[3] = -2; a[4] = 5;
-	//a[5] = 4; a[6] = 6; a[7] = 4;
-	//a[8] = -4; a[9] = 2; a[10] = 7;
-	//a[11] = 8; a[12] = -5;
+	// Optimization needed
+	for (int i = 0; i < A_nonzero; ++i) a[i] = A[i];
+	for (int i = 0; i < B_size; ++i) b[i] = B[i];
+	for (size_t i = 0; i < IA.size(); ++i) ia[i] = IA[i];
+	for (size_t i = 0; i < JA.size(); ++i) ja[i] = JA[i];
+	for (int i = 0; i < X_size; ++i) x[i] = X_true[i];
 
-	//			   Unit Matrix
-	/*a[0] = 1; a[1] = 1; a[2] = 1; a[3] = 1;
-	b[0] = 1; b[1] = 1; b[2] = 1; b[3] = 1;
-	ja[0] = 0; ja[1] = 1; ja[2] = 2; ja[3] = 3;
-	ia[0] = 0; ia[1] = 1; ia[2] = 2; ia[3] = 3; ia[4] = 4;*/
+	n = B_size;
+
 	/// =========================================
+
 
 	pack_params(iparm, false);
 
@@ -178,10 +193,53 @@ int main()
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	comm = MPI_Comm_c2f(MPI_COMM_WORLD);
 
+	// Validating Given solution: computing residual
+	if (rank == 0)
+	{
+		struct matrix_descr descr_A;
+		sparse_matrix_t csr_A;
+		sparse_status_t csr_status;
+		csr_status = mkl_sparse_d_create_csr(&csr_A, SPARSE_INDEX_BASE_ZERO, n, n, ia, (ia + 1), ja, a);
+
+		if (csr_status != SPARSE_STATUS_SUCCESS)
+		{
+			std::cout << " <logs> Error occured while tried to create sparse struct." << std::endl;
+			MPI_Barrier(MPI_COMM_WORLD);
+			MPI_Abort(MPI_COMM_WORLD, -1);
+			delete[] a; delete[] b; delete[] x; delete ia; delete[] ja; delete[] iparm;
+			mkl_sparse_destroy(csr_A);
+			return -1;
+		}
+
+		descr_A.type = SPARSE_MATRIX_TYPE_GENERAL;
+		csr_status = mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1.0, csr_A, descr_A, x, 0.0, b_test);
+
+		if (csr_status != SPARSE_STATUS_SUCCESS)
+		{
+			std::cout << " <logs> Error occured while tried to create sparse struct." << std::endl;
+			MPI_Barrier(MPI_COMM_WORLD);
+			MPI_Abort(MPI_COMM_WORLD, -1);
+			delete[] a; delete[] b; delete[] x; delete ia; delete[] ja; delete[] iparm;
+			mkl_sparse_destroy(csr_A);
+			return -1;
+		}
+
+		mkl_sparse_destroy(csr_A);
+		double resid = 0.0, resid0 = 0.0;
+		for (int i = 0; i < n; ++i)
+		{
+			resid += (b_test[i] - b[i]) * (b_test[i] - b[i]);
+			resid0 += b[i] * b[i];
+		}
+
+		resid = sqrt(resid) / sqrt(resid0);
+		std::cout << " <logs> Given system residual: " << resid << std::endl;
+	}
+
 	if (!rank && logs) std::cout << " <logs> MPI Initialized" << std::endl;
 
 	if (!rank && logs) std::cout << " <logs> Invoking cluster solver... " << std::endl;
-	
+
 	/// Symbolic factorization & reordering
 	phase = 11;
 	if (!rank && logs) std::cout << " <logs> Phase 1: Symbolic factorization" << std::endl;
@@ -236,15 +294,58 @@ int main()
 		return -1;
 	}
 
-	// Checking result:
-	if (!rank && logs)
+	// Calculating mean deviation
+	
+	if (!rank)
 	{
-		std::cout << " SOLUTION CHECK: " << std::endl;
+		double mean_dev = 0.0;
+		for (int i = 0; i < X_size; ++i) mean_dev += std::abs(X_true[i] - x[i]);
+		mean_dev /= X_size;
+		std::cout << " <logs> Mean deviation from Fidesys vector: " << mean_dev << std::endl;
+	}
+
+	if (rank == 0)
+	{
+		struct matrix_descr descr_A;
+		sparse_matrix_t csr_A;
+		sparse_status_t csr_status;
+		csr_status = mkl_sparse_d_create_csr(&csr_A, SPARSE_INDEX_BASE_ZERO, n, n, ia, ia + 1, ja, a);
+
+		if (csr_status != SPARSE_STATUS_SUCCESS)
+		{
+			std::cout << " <logs> Error occured while tried to create sparse struct." << std::endl;
+			MPI_Barrier(MPI_COMM_WORLD);
+			MPI_Abort(MPI_COMM_WORLD, -1);
+			delete[] a; delete[] b; delete[] x; delete ia; delete[] ja; delete[] iparm;
+			mkl_sparse_destroy(csr_A);
+			return -1;
+		}
+
+		descr_A.type = SPARSE_MATRIX_TYPE_GENERAL;
+		csr_status = mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1.0, csr_A, descr_A, x, 0.0, b_test);
+
+		if (csr_status != SPARSE_STATUS_SUCCESS)
+		{
+			std::cout << " <logs> Error occured while tried to create sparse struct." << std::endl;
+			MPI_Barrier(MPI_COMM_WORLD);
+			MPI_Abort(MPI_COMM_WORLD, -1);
+			delete[] a; delete[] b; delete[] x; delete ia; delete[] ja; delete[] iparm;
+			mkl_sparse_destroy(csr_A);
+			return -1;
+		}
+
+		mkl_sparse_destroy(csr_A);
+		double resid = 0.0, resid0 = 0.0;
 		for (int i = 0; i < n; ++i)
 		{
-			std::cout << " x[" << i << "] = " << x[i] << std::endl;
+			resid += (b_test[i] - b[i]) * (b_test[i] - b[i]);
+			resid0 += b[i] * b[i];
 		}
+
+		resid = sqrt(resid) / sqrt(resid0);
+		std::cout << " <logs> Solution residual: " << resid << std::endl;
 	}
+
 	// Releasing solver memory
 	phase = -1;
 	cluster_sparse_solver(pt, &maxfct, &mnum, &mtype, &phase, &n, a, ia, ja, &service_int, &nrhs, iparm, &msglvl, b, x, &comm, &error);

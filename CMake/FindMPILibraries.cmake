@@ -1,3 +1,4 @@
+# NEW MPI CMAKE
 if (WIN32)
 if((${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64") OR CMAKE_CL_64)
 	find_path(MPI_INTEL_INCLUDES
@@ -8,6 +9,7 @@ if((${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64") OR CMAKE_CL_64)
 		$ENV{PROGRAMFILES}/intel/MPI/*/em64t/include
 		$ENV{I_MPI_ROOT}em64t/include
 		$ENV{I_MPI_ROOT}/em64t/include
+		$ENV{I_MPI_ONEAPI_ROOT}/include
 	)
 	find_path(MPI_BINARY_PATH
 		NAMES
@@ -25,6 +27,7 @@ if((${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64") OR CMAKE_CL_64)
 		$ENV{PROGRAMFILES}/intel/MPI/*/em64t/lib
 		$ENV{I_MPI_ROOT}/em64t/lib
 		$ENV{I_MPI_ROOT}em64t/lib
+		$ENV{I_MPI_ONEAPI_ROOT}/lib/release
 	)
 	find_file(MPI_INTEL_LIB_CXX
 		impicxx.lib
@@ -33,6 +36,7 @@ if((${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64") OR CMAKE_CL_64)
 		$ENV{PROGRAMFILES}/intel/MPI/*/em64t/lib
 		$ENV{I_MPI_ROOT}em64t/lib
 		$ENV{I_MPI_ROOT}/em64t/lib
+		$ENV{I_MPI_ONEAPI_ROOT}/lib/release
 	)
 	find_file(MPI_INTEL_LIB_Fortran
 		impi.lib
@@ -41,6 +45,7 @@ if((${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64") OR CMAKE_CL_64)
 		$ENV{PROGRAMFILES}/intel/MPI/*/em64t/lib
 		$ENV{I_MPI_ROOT}em64t/lib
 		$ENV{I_MPI_ROOT}/em64t/lib
+		$ENV{I_MPI_ONEAPI_ROOT}/lib/release
 	)
 	find_path(MPI_MPICH_INCLUDES
 		NAMES
@@ -254,6 +259,7 @@ message(STATUS "  MPI_CXX_INCLUDE_PATH: " ${MPI_CXX_INCLUDE_PATH})
 message(STATUS "  MPI_C_LIBRARIES: " ${MPI_C_LIBRARIES})
 message(STATUS "  MPI_CXX_LIBRARIES: " ${MPI_CXX_LIBRARIES})
 message(STATUS "  MPI_Fortran_LIBRARIES: " ${MPI_Fortran_LIBRARIES})
+
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(MPILibraries DEFAULT_MSG MPI_INCLUDE_PATH MPI_CXX_INCLUDE_PATH MPI_C_LIBRARIES MPI_CXX_LIBRARIES MPI_Fortran_LIBRARIES )

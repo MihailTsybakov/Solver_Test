@@ -20,5 +20,5 @@ set duplicate block elements off
 block 1 add volume 1
 block 1 material 1 cs 1 element solid order 2
 analysis type static elasticity dim3
-print matrix_txt on
-calculation start path 'C:\Temp\fidesys05.pvd'
+
+

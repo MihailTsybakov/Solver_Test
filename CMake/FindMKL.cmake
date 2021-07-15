@@ -1,5 +1,5 @@
 # http://software.intel.com/en-us/articles/intel-mkl-link-line-advisor
-
+# NEW MKL CMAKE
 option(MKL_LINK_STATIC "MKL link only static libraries" ON)
 
 if(WIN32)
@@ -23,13 +23,14 @@ if(WIN32)
       "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/mkl/lib/intel64"
     )
     find_path(MKL_BINARYDIR
-      mkl_core.dll
+      mkl_core.1.dll
       HINTS
       ${MKLROOT}/../redist/intel64/mkl
       $ENV{MKLROOT}/../redist/intel64/mkl
       ${LIB_INSTALL_DIR}
       $ENV{MKL_BINARYDIR}
       $ENV{MKLLIB}
+	  "C:/Program Files (x86)/Intel/oneAPI/mkl/latest/redist/intel64"
       "C:/Program Files (x86)/Intel/Composer XE 2015/redist/intel64/mkl"
       "C:/Program Files (x86)/Intel/Composer XE 2013 SP1/redist/intel64/mkl"
       "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries_2017/windows/redist/intel64/mkl"
@@ -38,6 +39,7 @@ if(WIN32)
     find_path(OMP_LIBRARYDIR
       libiomp5md.lib
       HINTS
+	  "C:/Program Files (x86)/Intel/oneAPI/compiler/latest/windows/compiler/lib/intel64_win"
       "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/compiler/lib/intel64"
     )
   else((${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64") OR CMAKE_CL_64)

@@ -16,7 +16,7 @@ void read_vector(ifstream &file, MKL_INT size, vector<T> &result)
 }
 
 template<class T>
-void read_crs_matrix_file(ifstream &file, MKL_INT &matrix_size, MKL_INT &non_zero,
+void read_csr_matrix_file(ifstream &file, MKL_INT &matrix_size, MKL_INT &non_zero,
 	vector<MKL_INT> &ia, vector<MKL_INT> &ja, vector<T> &A)
 {
 	file >> matrix_size >> non_zero;
@@ -26,4 +26,4 @@ void read_crs_matrix_file(ifstream &file, MKL_INT &matrix_size, MKL_INT &non_zer
 }
 
 
-#endif
+#endif//MATRIX_SOLVERS_TESTS

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(Solver_Test)
+project(Intel_Solver_F1)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 
