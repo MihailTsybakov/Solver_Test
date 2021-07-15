@@ -151,9 +151,9 @@ int main()
 	std::ifstream X_vector;
 	std::ifstream A_matrix;
 
-	B_vector.open(source_path + "\\B.vec", std::ios::in);
-	X_vector.open(source_path + "\\X.vec", std::ios::in);
-	A_matrix.open(source_path + "\\A.txt", std::ios::in);
+	B_vector.open("B.vec", std::ios::in);
+	X_vector.open("X.vec", std::ios::in);
+	A_matrix.open("A.txt", std::ios::in);
 
 	if (!B_vector.is_open() || !X_vector.is_open() || !A_matrix.is_open())
 	{
