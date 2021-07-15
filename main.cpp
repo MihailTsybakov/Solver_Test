@@ -127,7 +127,7 @@ int main()
 
 	//    -======= Matrix Description ========-
 	/// =========================================
-	std::string source_path = "C:\\Users\\mihai\\Desktop\\progy\\C++\\MPI_Solvers\\Solver_F1\\repository\\Testing\\Examples\\fidesys_static_3d";
+	std::string source_path = "repository\\Testing\\Examples\\fidesys_static_3d";
 
 	std::ifstream B_vector;
 	std::ifstream X_vector;
