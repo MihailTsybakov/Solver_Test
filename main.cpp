@@ -101,6 +101,24 @@ void pack_params(int* solver_params, bool default_settings)
 	solver_params[62] = 0;   // Output value
 }
 
+template <class Type>
+void save_solution(std::string filename, MKL_INT sol_size, Type* solution)
+{
+	std::ofstream output_file;
+	output_file.open(filename);
+
+	if (!output_file.is_open())
+	{
+		std::cout << " Error: cannot create " << filename << std::endl;
+		return;
+	}
+
+	output_file << sol_size << "\n";
+	for (MKL_INT i = 0; i < sol_size; ++i) output_file << solution[i] << "\n";
+
+	output_file.close();
+}
+
 int main()
 {
 	bool logs = true;
@@ -345,6 +363,8 @@ int main()
 		resid = sqrt(resid) / sqrt(resid0);
 		std::cout << " <logs> Solution residual: " << resid << std::endl;
 	}
+
+	save_solution<double>("x_calc.vec", n, x);
 
 	// Releasing solver memory
 	phase = -1;
