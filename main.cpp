@@ -294,7 +294,7 @@ int main()
 		return -1;
 	}
 
-	// Calculating mean deviation
+	// Calculating residual for solution
 	
 	if (!rank)
 	{
