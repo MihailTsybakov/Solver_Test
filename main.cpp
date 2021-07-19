@@ -2,12 +2,31 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include "mpi.h"
 #include "mkl.h"
 #include "mkl_cluster_sparse_solver.h"
 
 #include "matrixio.h"
+
+class timer {
+private:
+	std::chrono::system_clock::time_point measure_start;
+	std::chrono::system_clock::time_point measure_end;
+public:
+	timer() {}
+	void start()
+	{
+		measure_start = std::chrono::system_clock::now();
+	}
+	void check(std::string message)
+	{
+		measure_end = std::chrono::system_clock::now();
+		int elapsed = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(measure_end - measure_start).count());
+		std::cout << message << elapsed << std::endl;
+	}
+};
 
 void MPI_test_invoke(int argc = 0, char* argv[] = nullptr)
 {
@@ -130,7 +149,6 @@ int main()
 	MKL_INT mtype = 11;			 // Real non-symmetric matrix
 	MKL_INT phase = 13;			 // Full solving process
 	MKL_INT  n = 4;				 /// Equations number ~!!
-	double* a;                   // A Matrix
 	MKL_INT* ia;				 // ia index array
 	MKL_INT* ja;				 // ja index array
 	MKL_INT service_int;		 // Ignored?
@@ -139,21 +157,22 @@ int main()
 	MKL_INT msglvl = 1;			 // Report messages ON
 	double* b, *b_test;			 // b vector
 	double* x;					 // x vector
+	double* a;					 // equation system matrix
 	MKL_INT error = 0;			 // Error Status
 
 	iparm = new MKL_INT[64];
 
 	//    -======= Matrix Description ========-
 	/// =========================================
-	std::string source_path = "repository\\Testing\\Examples\\fidesys_static_3d";
+	std::string source_path = "C:\\Users\\mihai\\Desktop\\progy\\C++\\MPI_Solvers\\Solver_F1\\repository\\Testing\\Examples\\fidesys_static_3d";
 
 	std::ifstream B_vector;
 	std::ifstream X_vector;
 	std::ifstream A_matrix;
 
-	B_vector.open("B.vec", std::ios::in);
-	X_vector.open("X.vec", std::ios::in);
-	A_matrix.open("A.txt", std::ios::in);
+	B_vector.open(source_path + "\\B.vec", std::ios::in);
+	X_vector.open(source_path + "\\X.vec", std::ios::in);
+	A_matrix.open(source_path + "\\A.txt", std::ios::in);
 
 	if (!B_vector.is_open() || !X_vector.is_open() || !A_matrix.is_open())
 	{
@@ -161,42 +180,30 @@ int main()
 		return -1;
 	}
 
-	MKL_INT A_size, A_nonzero;
+	MKL_INT a_size, a_nonzero, b_size, x_size;
+	B_vector >> b_size;
+	X_vector >> x_size;
+	A_matrix >> a_size;
+	A_matrix >> a_nonzero;
 
-	std::vector<double> A;
-	std::vector<double> B;
-	std::vector<double> X_true;
-	std::vector<MKL_INT> IA;
-	std::vector<MKL_INT> JA;
+	b = new double[b_size];
+	x = new double[x_size];
+	a = new double[a_nonzero];
+	ia = new MKL_INT[a_size + 1];
+	ja = new MKL_INT[a_nonzero];
+	b_test = new double[b_size];
 
-	read_csr_matrix_file<double>(A_matrix, A_size, A_nonzero, IA, JA, A);
+	for (MKL_INT i = 0; i < b_size; ++i) B_vector >> b[i];
+	for (MKL_INT i = 0; i < x_size; ++i) X_vector >> x[i];
+	for (MKL_INT i = 0; i < a_size + 1; ++i) A_matrix >> ia[i];
+	for (MKL_INT i = 0; i < a_nonzero; ++i) A_matrix >> ja[i];
+	for (MKL_INT i = 0; i < a_nonzero; ++i) A_matrix >> a[i];
 
-	MKL_INT B_size, X_size;
-	B_vector >> B_size;
-	X_vector >> X_size;
-	
-	read_vector<double>(B_vector, B_size, B);
-	read_vector<double>(X_vector, X_size, X_true);
+	n = b_size;
 
 	B_vector.close();
 	X_vector.close();
 	A_matrix.close();
-	
-	a = new double[A_nonzero];
-	b = new double[B_size];
-	b_test = new double[B_size];
-	x = new double[X_size];
-	ia = new MKL_INT[IA.size()];
-	ja = new MKL_INT[JA.size()];
-
-	// Optimization needed
-	for (int i = 0; i < A_nonzero; ++i) a[i] = A[i];
-	for (int i = 0; i < B_size; ++i) b[i] = B[i];
-	for (size_t i = 0; i < IA.size(); ++i) ia[i] = IA[i];
-	for (size_t i = 0; i < JA.size(); ++i) ja[i] = JA[i];
-	for (int i = 0; i < X_size; ++i) x[i] = X_true[i];
-
-	n = B_size;
 
 	/// =========================================
 
@@ -205,54 +212,15 @@ int main()
 
 	int rank, size, comm, argc = 0;
 	char** argv;
+	timer T;
 
+	T.start();
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	comm = MPI_Comm_c2f(MPI_COMM_WORLD);
 
-	// Validating Given solution: computing residual
-	if (rank == 0)
-	{
-		struct matrix_descr descr_A;
-		sparse_matrix_t csr_A;
-		sparse_status_t csr_status;
-		csr_status = mkl_sparse_d_create_csr(&csr_A, SPARSE_INDEX_BASE_ZERO, n, n, ia, (ia + 1), ja, a);
-
-		if (csr_status != SPARSE_STATUS_SUCCESS)
-		{
-			std::cout << " <logs> Error occured while tried to create sparse struct." << std::endl;
-			MPI_Barrier(MPI_COMM_WORLD);
-			MPI_Abort(MPI_COMM_WORLD, -1);
-			delete[] a; delete[] b; delete[] x; delete ia; delete[] ja; delete[] iparm;
-			mkl_sparse_destroy(csr_A);
-			return -1;
-		}
-
-		descr_A.type = SPARSE_MATRIX_TYPE_GENERAL;
-		csr_status = mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1.0, csr_A, descr_A, x, 0.0, b_test);
-
-		if (csr_status != SPARSE_STATUS_SUCCESS)
-		{
-			std::cout << " <logs> Error occured while tried to create sparse struct." << std::endl;
-			MPI_Barrier(MPI_COMM_WORLD);
-			MPI_Abort(MPI_COMM_WORLD, -1);
-			delete[] a; delete[] b; delete[] x; delete ia; delete[] ja; delete[] iparm;
-			mkl_sparse_destroy(csr_A);
-			return -1;
-		}
-
-		mkl_sparse_destroy(csr_A);
-		double resid = 0.0, resid0 = 0.0;
-		for (int i = 0; i < n; ++i)
-		{
-			resid += (b_test[i] - b[i]) * (b_test[i] - b[i]);
-			resid0 += b[i] * b[i];
-		}
-
-		resid = sqrt(resid) / sqrt(resid0);
-		std::cout << " <logs> Given system residual: " << resid << std::endl;
-	}
+	if (!rank && logs) std::cout << " <logs> System size: " << n << std::endl;
 
 	if (!rank && logs) std::cout << " <logs> MPI Initialized" << std::endl;
 
@@ -313,14 +281,6 @@ int main()
 	}
 
 	// Calculating residual for solution
-	
-	if (!rank)
-	{
-		double mean_dev = 0.0;
-		for (int i = 0; i < X_size; ++i) mean_dev += std::abs(X_true[i] - x[i]);
-		mean_dev /= X_size;
-		std::cout << " <logs> Mean deviation from Fidesys vector: " << mean_dev << std::endl;
-	}
 
 	if (rank == 0)
 	{
@@ -361,7 +321,7 @@ int main()
 		}
 
 		resid = sqrt(resid) / sqrt(resid0);
-		std::cout << " <logs> Solution residual: " << resid << std::endl;
+		std::cout << " <logs> Solution relative residual: " << resid << std::endl;
 	}
 
 	save_solution<double>("x_calc.vec", n, x);
@@ -369,6 +329,8 @@ int main()
 	// Releasing solver memory
 	phase = -1;
 	cluster_sparse_solver(pt, &maxfct, &mnum, &mtype, &phase, &n, a, ia, ja, &service_int, &nrhs, iparm, &msglvl, b, x, &comm, &error);
+
+	if (!rank) T.check(" <logs> Calculations elapsed, ms: ");
 
 	delete[] ia;
 	delete[] ja;
